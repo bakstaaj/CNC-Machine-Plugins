@@ -35,7 +35,7 @@ The on-screen jog buttons require the operator to confirm safe Z and clear XY tr
 - Camera video is shown in the plugin; no video is saved or transmitted.
 - The calibration assumes the camera and spindle remain rigidly mounted and that the image crosshair center is the reference point.
 - Jog with a clear, known safe Z. Slow spindle/camera cable routing should be checked over the full XY range before motion.
-- Machine motion and coordinate-offset changes are not confirmed on a live CNC in this prototype.
+- The G54 crosshair work-zero flow has been confirmed on a live CNC. Updating a non-active work system through the dropdown and jogging across the machine's full travel still need machine-side validation.
 
 ## Planned next stage
 
