@@ -1,26 +1,41 @@
 # gSender Plugins
 
-Source repository for gSender plugins maintained by Bakstaaj. Each plugin has its own folder and version history within this repository.
+Source repository for gSender plugins maintained by Bakstaaj. The two height map plugins use version subfolders that hold the current source snapshot and matching install ZIP. Spindle Tramming 0.4.2 remains at its original plugin folder root; its next source snapshot will use the same versioned layout.
 
 ## Plugins
 
-- [Spindle Tramming](spindle-tramming/README.md) — interactive spindle tramming for gSender 1.7.0-Edge-2.
+- [Spindle Tramming](spindle-tramming/README.md) — version 0.4.2; interactive spindle tramming for gSender 1.7.0-Edge-2.
+- [Surface Height Map](surface-height-map/v0.1.22/README.md) — version 0.1.22; probe-based surface calibration and G-code compensation.
+- [Surface Height Map (File First)](surface-height-map-file-first/v0.1.4/README.md) — version 0.1.4; imported-file calibration and compensation workflow.
+
+## Version folder layout
+
+```text
+<plugin-name>/
+  v<version>/
+    src/                 plugin source
+    test files/          automated tests and fixtures
+    ui/                  built interface for gSender
+    <plugin>-v<version>.zip  install package for this version
+```
+
+Keep the matching source, built UI, manifest, README, and install ZIP together in each version folder. For every new release, add a new version folder and preserve previous snapshots. Never combine multiple plugins into one install package.
 
 ## Development
 
-Work from the selected plugin folder. For Spindle Tramming:
+Run npm commands from the version folder you are working on. Example:
 
 ```powershell
-cd spindle-tramming
+cd surface-height-map\v0.1.22
 npm ci
 npm test
 npm run build
+.\package-plugin.ps1
 ```
 
-The plugin source and generated `ui/` output live together in its folder. Do not commit `node_modules/` or release ZIPs into the source folder.
+The same workflow applies to the other plugins that provide an npm project and packaging script. Do not commit `node_modules/` or generated `dist/` contents.
 
-## Releases
+## GitHub Releases
 
-Publish a separate GitHub Release for each plugin version. Use a plugin-prefixed tag such as `spindle-tramming-v0.4.2` and attach that version's install ZIP, for example `gsender-spindle-tramming-0.4.2.zip`. The ZIP contains the gSender plugin manifest, built UI, README, and required screenshots. Do not combine multiple plugins into one install ZIP.
+Use a separate tag and GitHub Release for each plugin version, such as `surface-height-map-v0.1.22` or `surface-height-map-file-first-v0.1.4`. Attach the matching install ZIP from that version folder to its GitHub Release. The ZIP can also be downloaded directly from the repository's version folder.
 
-Local release assets are staged under `release-assets/<plugin>/v<version>/`; this directory is ignored by Git because those ZIPs are attached to GitHub Releases rather than committed to source history.
