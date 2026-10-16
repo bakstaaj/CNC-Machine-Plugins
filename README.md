@@ -7,7 +7,7 @@ Source repository for gSender plugins maintained by Bakstaaj. The two height map
 - [Spindle Tramming](spindle-tramming/README.md) — version 0.4.2; interactive spindle tramming for gSender 1.7.0-Edge-2.
 - [Surface Height Map](surface-height-map/v0.1.22/README.md) — version 0.1.22; probe-based surface calibration and G-code compensation.
 - [Surface Height Map (File First)](surface-height-map-file-first/v0.1.6/README.md) — version 0.1.6; contour-aware probing, rectangular fallback, and selectable work-zero compensation.
-- [Camera Align & Print Registration](camera-align-print-registration/v0.1.0/README.md) — prototype 0.1.0; live camera, camera-to-spindle offset calibration, selectable G54–G59 crosshair work zero, and screenshots.
+- [Camera Align & Print Registration](camera-align-print-registration/v0.2.0/README.md) — version 0.2.0; live camera, selectable G54–G59 work zero, and two-point printed-artwork registration.
 
 ## Version folder layout
 
