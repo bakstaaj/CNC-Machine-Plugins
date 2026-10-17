@@ -6,6 +6,16 @@ The plugin is designed for gSender's current plugin SDK and Edge builds. It uses
 
 Version 0.1.4 adds a live percentage beside the calibration progress bar and a scrollable table of the latest ten X/Y/Z readings. Version 0.1.3 lets one saved scan be applied to subsequent imported files whose complete XY extents fit within the scanned bounds. The scan stays unchanged when importing another file; its lower-left origin is used for G54 alignment. Version 0.1.2 adds a saved probe-area alignment option: use machine X0 Y0 as the lower-left corner or center the imported project's extents on machine travel. Version 0.1.1 keeps the controller's probe-position parser active for the plugin session and matches delayed `[PRB:...]` reports to the active grid point. The same fast/slow probe path is used for conductive and non-conductive surfaces.
 
+## Screenshots
+
+These captures show the project-derived map setup, saved surface visualization, and the workflow for applying a map to a G-code copy.
+
+![File First project import and map setup](docs/screenshots/01-map-setup.jpg)
+
+![Saved probe map visualization](docs/screenshots/02-saved-map-view.jpg)
+
+![Apply-map controls and compensated file workflow](docs/screenshots/03-apply-map.jpg)
+
 ## Workflow
 
 1. **Connect and import the project.** Connect to the CNC in gSender, then choose the project G-code file. The plugin requires metric (`G21`) and absolute (`G90`) XY coordinates so it can find the full project bounds.

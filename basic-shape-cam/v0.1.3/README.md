@@ -4,6 +4,14 @@
 
 Generate simple, closed 2D profile toolpaths and load them into gSender Carve for review or download them as G-code.
 
+## Screenshots
+
+The slot form sets the overall length and fixed width, with full-radius semicircular ends. The preview shows the generated outside profile before it is loaded into Carve or downloaded.
+
+![Slot dimensions and profile settings](docs/screenshots/01-slot-settings.jpg)
+
+![Rounded slot toolpath preview](docs/screenshots/02-slot-preview.jpg)
+
 ## Shapes
 
 - Rectangle and square

@@ -4,6 +4,14 @@
 
 Estimate CNC job runtime and cost from a G-code file before sending it to the machine. The plugin reads the selected file locally in gSender; it does not upload, modify, or send the file to the CNC.
 
+## Screenshots
+
+The example below shows a sample G-code estimate with material and machine costs, motion breakdown, and a safe-height review. The separate path review lists long XY rapid moves and labels possible savings as a what-if scenario.
+
+![Estimated runtime, job cost, machine time, material cost, and motion breakdown](screenshots/01-estimate-summary.jpg)
+
+![XY rapid path review with longest moves and illustrative savings](screenshots/02-path-review.jpg)
+
 ## Features
 
 - Estimate G0 rapid time and G1/G2/G3 cutting time from programmed feed rates.

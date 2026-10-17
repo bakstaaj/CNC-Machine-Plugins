@@ -11,6 +11,17 @@ Source repository for gSender plugins maintained by Bakstaaj. The two height map
 - [G-code Job Cost Estimator](job-cost-estimator/v0.1.0/README.md) — prototype 0.1.0; local runtime and job-cost estimates, safe-height review, and read-only XY path analysis.
 - [Basic Shape CAM](basic-shape-cam/v0.1.3/README.md) — prototype 0.1.3; generate-and-load-to-visualizer for Carve review, plus downloadable profiles for rectangles, squares, circles, ovals, slots, triangles, and regular polygons.
 
+## Plugin screenshots
+
+| Plugin | Preview |
+| --- | --- |
+| [Spindle Tramming](spindle-tramming/README.md) | <img src="spindle-tramming/docs/images/04-interactive.png" alt="Spindle tramming controls and setup" width="300"> |
+| [Surface Height Map](surface-height-map/v0.1.22/README.md) | <img src="surface-height-map/v0.1.22/docs/screenshots/01-map-setup.jpg" alt="Surface height map calibration setup" width="300"> |
+| [Surface Height Map (File First)](surface-height-map-file-first/v0.1.6/README.md) | <img src="surface-height-map-file-first/v0.1.6/docs/screenshots/01-map-setup.jpg" alt="File First contour-aware mapping setup" width="300"> |
+| [Camera Align & Print Registration](camera-align-print-registration/v0.2.0/README.md) | <img src="camera-align-print-registration/v0.2.0/screenshots/camera-popout-jog.png" alt="Floating camera and attached jog controls" width="300"> |
+| [G-code Job Cost Estimator](job-cost-estimator/v0.1.0/README.md) | <img src="job-cost-estimator/v0.1.0/screenshots/01-estimate-summary.jpg" alt="Estimated runtime, cost, and time breakdown" width="300"> |
+| [Basic Shape CAM](basic-shape-cam/v0.1.3/README.md) | <img src="basic-shape-cam/v0.1.3/docs/screenshots/02-slot-preview.jpg" alt="Generated rounded slot profile preview" width="300"> |
+
 ## Version folder layout
 
 ```text
