@@ -1,0 +1,14 @@
+{
+  "id": "com.bakstaaj.gcode-job-cost-estimator",
+  "name": "G-code Job Cost Estimator",
+  "version": "0.1.0",
+  "description": "Estimate CNC job runtime, tool-change overhead, material cost, and machine cost from G-code.",
+  "engine": "1.7.0-Edge-2",
+  "permissions": ["storage"],
+  "ui": {
+    "entry": "ui/index.html",
+    "contributions": [
+      { "slot": "tools-page", "route": "gcode-job-cost-estimator", "label": "G-code Job Cost Estimator" }
+    ]
+  }
+}
