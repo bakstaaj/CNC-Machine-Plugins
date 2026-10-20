@@ -98,7 +98,7 @@ No method corrects the machine automatically. Use the results to guide mechanica
 
 ## Measurement principle and geometry
 
-This plugin follows the fixed-contact approach of [bhowiebkr/spindle-tramming-tool](https://github.com/bhowiebkr/spindle-tramming-tool). The Z-carriage moves in a circular XY path around the intended indicator contact point. As it revolves, the indicator arm rotates about the spindle axis so the tip stays over that point. The spindle motor remains off.
+This plugin follows the fixed-contact approach of [bhowiebkr/spindle-tramming-tool](https://github.com/bhowiebkr/spindle-tramming-tool). The Z-carriage revolves around the fixed indicator contact point. The gauge arm is mounted to the spindle and rotates about the spindle axis as the Z-carriage revolves, keeping the indicator tip on that same point. The spindle motor remains off.
 
 **The selected side describes the Z-carriage's position around the contact point, not the direction the indicator arm points.** The arm points toward the center.
 
