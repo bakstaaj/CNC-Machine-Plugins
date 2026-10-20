@@ -61,6 +61,7 @@ The package contains:
   README.md  
   docs/  
     images/  
+      Explanation.png  
       04-interactive.png  
       05-readings.png  
       06-error-plane.png  
@@ -73,13 +74,35 @@ The package contains:
 
 Node.js is not required to install the built package. Do not open `ui/index.html` directly: it needs SDK paths and bridge services supplied by gSender. Source build instructions appear below.
 
+## Why this method isolates spindle tram
+
+![Comparison of the fixed-contact method and a gauge sweep](docs/images/Explanation.png)
+
+The plugin checks whether the spindle axis is square to the Z-carriage’s circular XY travel. The Z-carriage revolves through several positions around one contact point. At each position the indicator tip remains on the same physical spot. If the spindle is square, the readings should stay nearly the same as the Z-carriage revolves. A consistent change between opposite positions indicates tram error; the plugin uses those differences and the recorded positions to calculate the result.
+
+The right panel shows the key geometry: the Z-carriage revolves around a fixed gauge contact point. In the plugin, the gauge arm is mounted to the spindle. The gauge arm rotates in the spindle axis as the carriage moves so the tip stays on that fixed point.
+
+### Why bed level and flatness do not enter the difference
+
+Every reading is taken at the same physical spot. The bed's height or tilt at that spot is common to all readings, so it cancels when the plugin compares readings from different Z-carriage positions. Unevenness elsewhere on the bed is not sampled. This method measures spindle tram; it does not level the bed or measure bed flatness. The benefit depends on keeping the indicator tip on the same point with consistent contact and preload. If the tip drifts, the surface under it changes and can affect the readings.
+
+### How different methods compare
+
+| Method | What it compares | Advantages | Trade-offs |
+| - | - | - | - |
+| **Plugin fixed-contact method** | Dial readings at several Z-carriage positions while the tip stays on one point | Bed tilt and flatness elsewhere do not affect the reading difference; directly focuses on spindle tram | Requires careful manual tracking of one point, consistent preload, and a clear circular travel path |
+| **Two-headed tram gauge** | Two indicator tips on opposite sides of the spindle, usually touching the bed at the same time | Fast, familiar, and gives an immediate side-to-side comparison | The two tips touch different spots, so bed tilt or unevenness between those spots can be mixed into the result |
+| **Sweep a single gauge around the bed** | One indicator tip follows a circle across the bed as the Z-carriage revolves | Easy to visualize and useful when the bed is a trusted flat reference | The tip samples different bed locations, so bed tilt or local high/low areas can look like spindle tram error |
+
+No method corrects the machine automatically. Use the results to guide mechanical adjustment, then measure again.
+
 ## Measurement principle and geometry
 
-This plugin follows the fixed-contact approach of [bhowiebkr/spindle-tramming-tool](https://github.com/bhowiebkr/spindle-tramming-tool). The spindle moves in a circular XY path around the intended indicator contact point. As it travels, manually turn the indicator arm around the spindle axis so the tip stays over that point. The spindle motor remains off.
+This plugin follows the fixed-contact approach of [bhowiebkr/spindle-tramming-tool](https://github.com/bhowiebkr/spindle-tramming-tool). The Z-carriage moves in a circular XY path around the intended indicator contact point. As it revolves, the indicator arm rotates about the spindle axis so the tip stays over that point. The spindle motor remains off.
 
-**The selected side describes the spindle's position around the contact point, not the direction the indicator arm points.** The arm points toward the center.
+**The selected side describes the Z-carriage's position around the contact point, not the direction the indicator arm points.** The arm points toward the center.
 
-| Selected spindle side | Spindle relative XY at 50 mm radius | Arm points |
+| Selected Z-carriage side | Z-carriage relative XY at 50 mm radius | Arm points |
 | - | - | - |
 | East | X +50 mm, Y 0 | West |
 | Southeast | X +35.36 mm, Y -35.36 mm | Northwest |
@@ -93,7 +116,7 @@ This plugin follows the fixed-contact approach of [bhowiebkr/spindle-tramming-to
 
 The contact point need not be the work origin because every arc uses relative endpoints and incremental I/J centers. Correct physical radius and starting side are still essential: the plugin cannot see the indicator tip. No initial positioning or Z movement is generated.
 
-The indicator must remain securely mounted and appropriately preloaded. Manual tracking, arm flex, friction, and inconsistent contact can affect the readings. The spindle must also be mechanically free to let you rotate the arm safely without powering it.
+The indicator must remain securely mounted and appropriately preloaded. Manual tracking, arm flex, friction, and inconsistent contact can affect the readings. The indicator arm must be free to rotate safely around the spindle axis without spindle power.
 
 ## Setup controls
 
