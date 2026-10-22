@@ -1,4 +1,4 @@
-import { machine, redux } from '@sienci/gsender-plugin-sdk';
+import { machine, redux, storage } from '@sienci/gsender-plugin-sdk';
 import { TrammingSession } from './motion.js';
 import { analyzeReadings, planeModel } from './analysis.js';
 import tiltNodImage from '../docs/images/tilt-nod.png';
@@ -14,7 +14,7 @@ document.querySelector('#app').innerHTML=`
 <label>Angle per move<select id="degrees"><option value="90">90 degrees</option><option value="45">45 degrees</option></select></label>
 <label>Initial preload reading<input id="preload" type="number" step="any" value="0" required></label>
 <label>Dial reading units<select id="readingUnits"><option value="mm">Millimeters</option><option value="in">Inches</option></select></label>
-</div></fieldset></form>
+</div></fieldset></form><p id="settingsStatus" class="hint" role="status">Settings are saved automatically on this device in gSender.</p>
 <p class="hint">The selected X/Y position describes the spindle around the fixed contact tip. The indicator arm points toward the center. Rotate the arm by hand during each arc. Do not jog or change offsets during a session.</p>
 <p class="hint">Check clearance for the full arc, including the gauge body and stem; some gauges may need the stem cap removed if their design allows it. A camera or mirror can help read the dial when it faces away. Avoid leaning on the machine table while reading.</p>
 <label class="check"><input id="ready" type="checkbox"> I switched spindle/VFD power off at its power control, secured the indicator, and checked the start geometry and full travel.</label>
@@ -32,6 +32,42 @@ const sideLabel=side=>({east:'X+',south:'Y-',west:'X-',north:'Y+',southeast:'X+ 
 const finiteReading=value=>value!=='' && Number.isFinite(Number(value));
 const session=new TrammingSession({machine,redux,onChange:render});
 const settings=()=>({radius:Number($('radius').value),feed:Number($('feed').value),start:$('start').value,degrees:Number($('degrees').value),preload:$('preload').value,readingUnits:$('readingUnits').value});
+const persistedSettingIds=['radius','feed','start','degrees','preload','readingUnits','xSpan','ySpan','gain'];
+const settingsKey='spindleTramming.settings';
+let settingsWriteQueue=Promise.resolve(), settingsSaveTimer;
+function currentPersistentSettings(){return Object.fromEntries(persistedSettingIds.map(id=>[id,$(id).value]));}
+function validSavedSetting(id,value){
+ if(id==='start')return ['east','south','west','north'].includes(value);
+ if(id==='degrees')return ['45','90'].includes(String(value));
+ if(id==='readingUnits')return ['mm','in'].includes(value);
+ if(id==='xSpan'||id==='ySpan')return value==='' || Number.isFinite(Number(value))&&Number(value)>0;
+ if(id==='gain')return Number.isInteger(Number(value))&&Number(value)>=1&&Number(value)<=1000;
+ if(id==='radius')return Number.isFinite(Number(value))&&Number(value)>0&&Number(value)<=1000;
+ if(id==='feed')return Number.isFinite(Number(value))&&Number(value)>0&&Number(value)<=10000;
+ if(id==='preload')return value!==''&&Number.isFinite(Number(value));
+ return false;
+}
+async function restorePersistentSettings(){
+ try{
+  const saved=await storage.get(settingsKey,{});
+  if(saved&&typeof saved==='object')for(const id of persistedSettingIds)if(Object.hasOwn(saved,id)&&validSavedSetting(id,saved[id]))$(id).value=String(saved[id]);
+  $('settingsStatus').textContent=saved&&Object.keys(saved).length?'Saved settings restored from this device. Safety confirmation and measurement readings start fresh.':'Settings save automatically on this device in gSender.';
+ }catch(error){$('settingsStatus').textContent=`Could not load saved settings: ${error.message}`;}
+ render();
+}
+function savePersistentSettings(){
+ const values=currentPersistentSettings();
+ settingsWriteQueue=settingsWriteQueue.catch(()=>{}).then(()=>storage.set(settingsKey,values)).then(()=>{
+  $('settingsStatus').textContent='Settings saved on this device in gSender.';
+ }).catch(error=>{
+  $('settingsStatus').textContent=`Could not save settings: ${error.message}`;
+ });
+ return settingsWriteQueue;
+}
+function scheduleSettingsSave(){
+ clearTimeout(settingsSaveTimer);
+ settingsSaveTimer=setTimeout(()=>void savePersistentSettings(),250);
+}
 const f=(value,digits=5)=>Number(value).toFixed(digits);
 function clearResult(){result=null;$('result').replaceChildren();$('visual').hidden=true;}
 function syncButtons(){
@@ -100,7 +136,12 @@ $('readings').addEventListener('input',event=>{
 });
 $('settings').addEventListener('submit',event=>event.preventDefault());
 $('settings').addEventListener('input',()=>{if(!session.active || sessionDone){$('ready').checked=false;render();}});
+for(const id of persistedSettingIds){
+ $(id).addEventListener('input',scheduleSettingsSave);
+ $(id).addEventListener('change',()=>{clearTimeout(settingsSaveTimer);void savePersistentSettings();});
+}
 $('begin').onclick=async()=>{
+ await settingsReady;
  if(!$('ready').checked){$('status').textContent='Check the setup confirmation before starting.';return;}
  sessionDone=false;
  clearResult();lastArc=null;
@@ -171,5 +212,10 @@ function drawPlane(){
 $('gain').addEventListener('input',drawPlane);
 // Best effort if the user closes this view during a direct move. A hardware
 // stop and the host controls remain authoritative; navigation is not a resume.
-window.addEventListener('pagehide',()=>{if(session.moving && session.active)void session.hold().catch(()=>{});});
+window.addEventListener('pagehide',()=>{
+ clearTimeout(settingsSaveTimer);
+ void savePersistentSettings();
+ if(session.moving && session.active)void session.hold().catch(()=>{});
+});
 render();
+const settingsReady=restorePersistentSettings();

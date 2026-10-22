@@ -1,12 +1,20 @@
 # Spindle Tramming for gSender Edge2
 
-**Plugin 0.4.3 | gSender 1.7.0-Edge-2 | SDK 0.2.2**
+**Plugin 0.4.4 | gSender 1.7.0-Edge-2 | SDK 0.2.2**
 
 An interactive tramming workspace: enter your setup, move the spindle clockwise or counterclockwise, record dial readings, calculate tilt and nod, and inspect a 3D error plane with adjustable visual exaggeration. The complete measurement process stays in the plugin window.
 
+The setup values save locally in gSender and return when you leave the plugin and open it again. Measurement readings and the physical safety confirmation are session-only and start fresh each time.
+
+## What changed in 0.4.4
+
+- Saves indicator radius, feed, starting side, angle, initial dial reading, units, correction spans, and visual exaggeration on this device.
+- Restores valid saved settings when the plugin opens. Measurement rows and the spindle/VFD safety confirmation are not restored.
+- Requests gSender plugin storage permission.
+
 Version 0.4.3 labels spindle positions as X+/X-/Y+/Y- and names the measured axes tilt (X) and nod (Y). It also makes the physical spindle/VFD power-off check explicit and avoids sending a feed hold when only the post-move G90 acknowledgement times out.
 
-> **Validation status:** Build output and package contents are checked for this update. Automated tests were not run. Screenshots show the built UI connected to a local simulated host; no real machine moved. Live CNC behavior has not been validated.
+> **Validation status:** The v0.4.4 UI build completed. Automated tests were not run. The settings screenshot uses simulated gSender storage; no real machine moved. Live persistence in gSender and CNC behavior have not been validated yet.
 
 ## What changed in 0.4.3
 
@@ -27,6 +35,10 @@ Version 0.4.3 labels spindle positions as X+/X-/Y+/Y- and names the measured axe
 ![Tilt and nod explanation in the plugin](docs/images/08-tilt-nod-ui.png)
 
 *The plugin explains tilt and nod beside the measurement workflow.*
+
+![Persistent setup values restored in the plugin](docs/images/09-persistent-settings.png)
+
+*Example saved radius, feed, starting side, angle, and dial values restored when the plugin opens. Safety confirmation and measurement readings start fresh.*
 
 ## What changed in 0.4.2
 
@@ -61,13 +73,13 @@ Version 0.4.3 labels spindle positions as X+/X-/Y+/Y- and names the measured axe
 
 ## Installation and permissions
 
-1. Download `gsender-spindle-tramming-0.4.3.zip` and extract it.
+1. Download `gsender-spindle-tramming-0.4.4.zip` and extract it.
 
 2. Locate the extracted folder containing `gsender-plugin.json` and `ui/index.html`.
 
 3. Open **gSender 1.7.0-Edge-2 → Tools → Plugins** and use the plugin import action.
 
-4. Select that folder and review the new permissions. **This version needs permission to read machine state, send machine commands, capture command responses, and read Redux state.** Importing the SDK machine client may also produce a parser/stream permission in the host's capability scan, even though this release does not install a raw-stream parser.
+4. Select that folder and review the permissions. **This version needs permission to read machine state, send machine commands, capture command responses, read Redux state, and save plugin settings locally in gSender.** Importing the SDK machine client may also produce a parser/stream permission in the host's capability scan, even though this release does not install a raw-stream parser.
 
 5. Complete import and open **Spindle Tramming** from Tools. Restart the host if needed.
 
@@ -85,6 +97,7 @@ The package contains:
       tilt-nod.png
       04-interactive.png  
       08-tilt-nod-ui.png
+      09-persistent-settings.png
       05-readings.png  
       06-error-plane.png  
       07-corrections.png  
