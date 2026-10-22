@@ -20,11 +20,11 @@ The Makera Z1 preset fills the editable IP camera settings and shows the connect
 
 ## View the camera over Carve
 
-Connect the camera from the Tools page. A successful connection saves the selected camera settings automatically. In Carve, select the **📷 camera icon** in the visualizer controls to open CNC Camera Monitor as a gSender visualizer overlay. The plugin reconnects using the saved camera settings when that overlay opens. The viewer stays over the Carve workspace while it remains open, so you can keep the camera feed in view while returning to the toolpath and normal Carve controls. Closing the overlay stops the camera feed.
+Connect the camera from the Tools page. A successful connection saves the selected camera settings automatically. In Carve, click the round **📷 camera button** on the left side of the visualizer to open CNC Camera Monitor as an overlay. The plugin reconnects using the saved camera settings when that overlay opens. The viewer stays over the Carve workspace while you work with the toolpath and normal Carve controls. Closing the overlay stops the camera feed.
 
-![CNC Camera Monitor view open over the gSender Carve visualizer](screenshots/04-carve-camera-view.png)
+![Current gSender Carve workspace with the camera button and live CNC Camera Monitor overlay](screenshots/04-carve-camera-view.png)
 
-The screenshot shows the overlay open on top of the Carve visualizer. The camera icon opens this view; the exact position of gSender’s visualizer controls can vary with its layout and version. The feed is view-only and does not start, pause, stop, or change the CNC job.
+The screenshot shows where to open the viewer and what it looks like over Carve. Its status line shows whether the feed is live, along with the reported frame rate and image size. The controls let you zoom, switch between Fill and Fit, flip or rotate the image, and refresh the view. The feed is view-only and does not start, pause, stop, or change the CNC job.
 
 This uses gSender's supported visualizer overlay. The plugin iframe does not have permission to open separate windows.
 
