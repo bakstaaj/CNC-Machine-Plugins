@@ -29,7 +29,7 @@ export function samePosition(a,b,tolerance=0.02) {
 export class TrammingSession {
   constructor({machine,redux,onChange=()=>{},sleep=ms=>new Promise(r=>setTimeout(r,ms)),now=()=>Date.now()}) {
     Object.assign(this,{machine,redux,onChange,sleep,now});
-    this.rows=[];this.active=false;this.moving=false;this.fault=false;this.side=null;this.token=0;
+    this.rows=[];this.active=false;this.moving=false;this.jogging=false;this.fault=false;this.side=null;this.token=0;
   }
   changed(){this.onChange(this);}
   async checkedQuery(command,timeout=10000) {
@@ -45,7 +45,7 @@ export class TrammingSession {
     if(/\bG90\.1\b/.test(report))throw Error('Absolute I J centers are unsupported. Select incremental arc centers first.');
   }
   async begin(config) {
-    if(this.moving)throw Error('Wait for the current operation.');
+    if(this.moving||this.jogging)throw Error('Wait for the current operation.');
     plan({...config,start:config.start,clockwise:true});
     if(config.preload==='' || !Number.isFinite(Number(config.preload)))throw Error('Enter a finite initial preload reading.');
     this.moving=true;this.active=false;this.fault=false;this.changed();
@@ -59,7 +59,7 @@ export class TrammingSession {
     } finally {this.moving=false;this.changed();}
   }
   async move(clockwise) {
-    if(this.moving)throw Error('A move is already in progress.');
+    if(this.moving||this.jogging)throw Error('A move is already in progress.');
     if(!this.active || this.fault)throw Error('Start a new measurement session first.');
     const last=this.rows.at(-1);
     if(last.saved===false || last.reading.trim()==='' || !Number.isFinite(Number(last.reading)))throw Error('Save the current dial reading before the next move.');
@@ -127,5 +127,67 @@ export class TrammingSession {
   async hold() {
     ++this.token;this.fault=true;this.active=false;this.changed();
     await this.machine.command('feedhold');
+  }
+  async stopForJog() {
+    if(this.moving) {
+      await this.hold();
+      const deadline=this.now()+10000;
+      while(this.moving&&this.now()<deadline)await this.sleep(25);
+      if(this.moving)throw Error('The tramming move did not stop in time. Use gSender’s machine controls and do not jog yet.');
+    } else {
+      ++this.token;
+      this.active=false;
+      this.changed();
+    }
+  }
+  async jog(axis,distance) {
+    if(!['x','y','z'].includes(axis)||!Number.isFinite(distance)||Math.abs(distance)<0.001||Math.abs(distance)>10)throw Error('Choose an X, Y, or Z jog from 0.1 to 10 mm.');
+    if(this.moving||this.jogging)throw Error('Wait for the current machine operation.');
+    if(this.active)throw Error('End the tramming session before manual jogging.');
+    const before=assertIdle(await this.redux.getState());
+    const modalResponse=await this.checkedQuery('$G');
+    const modal=modalResponse.lines.find(line=>/^\[GC:/i.test(line))?.match(/^\[GC:(.*)\]$/i)?.[1]||'';
+    if(!/(?:^|\s)M5(?:\s|$)/.test(modal))throw Error('Controller must report spindle off M5 before jogging.');
+    const units=/(?:^|\s)G20(?:\s|$)/.test(modal)?'G20':/(?:^|\s)G21(?:\s|$)/.test(modal)?'G21':null;
+    const distanceMode=/(?:^|\s)G91(?:\s|$)/.test(modal)?'G91':/(?:^|\s)G90(?:\s|$)/.test(modal)?'G90':null;
+    const feedMode=/(?:^|\s)G93(?:\s|$)/.test(modal)?'G93':/(?:^|\s)G94(?:\s|$)/.test(modal)?'G94':null;
+    if(!units||!distanceMode||!feedMode)throw Error('Could not determine controller units and motion modes from $G.');
+    const latest=assertIdle(await this.redux.getState());
+    if(!samePosition(before,latest))throw Error('Machine position changed during jog setup. Check the machine before continuing.');
+    this.jogging=true;this.changed();
+    let busy=false,submitted=false,completed=false;
+    const restoreModes=()=>this.checkedQuery(`${distanceMode} ${units} ${feedMode}`);
+    try {
+      await this.machine.setBusy(true,'Spindle tramming jog');busy=true;
+      await this.checkedQuery('G21 G91 G94');
+      submitted=true;
+      await this.checkedQuery(`G0 ${axis.toUpperCase()}${distance.toFixed(4)}`);
+      await this.checkedQuery('G4 P0',30000);
+      completed=true;
+      await restoreModes();
+      const expected=structuredClone(before);
+      for(const frame of ['machine','work'])expected[frame][axis]+=distance;
+      const deadline=this.now()+5000;
+      let verified=false;
+      do {
+        const snapshot=await this.redux.getState();
+        if(snapshot?.controller?.state?.status?.activeState==='Run') {
+          if(!snapshot.connection?.isConnected||snapshot.controller?.workflow?.state!=='idle')throw Error('Connection or host job state changed during the jog.');
+        } else {
+          const actual=assertIdle(snapshot,{ownBusy:true});
+          if(samePosition(actual,expected)){verified=true;break;}
+        }
+        await this.sleep(150);
+      } while(this.now()<deadline);
+      if(!verified)throw Error(`Jog was acknowledged, but the ${axis.toUpperCase()} endpoint was not verified. Check the machine before continuing.`);
+      return expected;
+    } catch(error) {
+      if(submitted&&!completed)await this.machine.command('feedhold').catch(()=>{});
+      await restoreModes().catch(()=>{});
+      throw error;
+    } finally {
+      if(busy)await this.machine.setBusy(false).catch(()=>{});
+      this.jogging=false;this.changed();
+    }
   }
 }

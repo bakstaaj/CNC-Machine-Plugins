@@ -1,5 +1,5 @@
 import { machine, redux, storage } from '@sienci/gsender-plugin-sdk';
-import { TrammingSession } from './motion.js';
+import { TrammingSession, assertIdle } from './motion.js';
 import { analyzeReadings, planeModel } from './analysis.js';
 import tiltNodImage from '../docs/images/tilt-nod.png';
 import './style.css';
@@ -20,14 +20,17 @@ document.querySelector('#app').innerHTML=`
 <label class="check"><input id="ready" type="checkbox"> I switched spindle/VFD power off at its power control, secured the indicator, and checked the start geometry and full travel.</label>
 <button id="begin">Start new session (clears readings)</button></section>
 <section id="workflow" class="panel movement workflow"><div><h2>Move and measure</h2><p id="position">No active session</p>
-<svg id="circle" viewBox="-95 -95 190 190" aria-label="Current spindle position around contact point"><circle cx="0" cy="0" r="60" class="orbit"/><path id="arc"/><line id="arm" x1="0" y1="0"/><circle cx="0" cy="0" r="3" class="center"/><circle id="marker" r="6"/><text x="-9" y="-78">Y+</text><text x="78" y="4">X+</text><text x="-9" y="86">Y-</text><text x="-91" y="4">X-</text><text x="34" y="-40">X+ Y+</text><text x="34" y="48">X+ Y-</text><text x="-68" y="48">X- Y-</text><text x="-68" y="-40">X- Y+</text></svg></div>
-<div><div class="latest-entry"><label class="latest-reading"><span id="latestLabel">Start a session to enter readings here.</span><input id="latestReading" type="number" step="any" disabled placeholder="Dial value"></label><button id="saveReading" disabled>Save</button></div><div class="actions workflow-actions"><button id="cw" disabled>Move CW</button><button id="ccw" disabled>Move CCW</button><button id="hold" class="danger" disabled>Hold motion</button><button id="done" class="secondary" disabled>Done</button></div><p class="hint">Save each reading before the next move. Done finishes the move sequence and releases this pinned panel; saved readings remain available below.</p><p class="hint">Hold interrupts a move. Recover using gSender and start a new session at known geometry; there is no automatic resume.</p><p role="status" id="status">Set up your indicator and start a session.</p></div></section>
+<svg id="circle" viewBox="-95 -95 190 190" aria-label="Current spindle position around contact point"><circle cx="0" cy="0" r="60" class="orbit"/><path id="arc"/><line id="arm" x1="0" y1="0"/><circle cx="0" cy="0" r="3" class="center"/><circle id="marker" r="6"/><text x="-9" y="-78">Y+</text><text x="78" y="4">X+</text><text x="-9" y="86">Y-</text><text x="-91" y="4">X-</text><text x="58" y="-45" text-anchor="start">X+ Y+</text><text x="58" y="48" text-anchor="start">X+ Y-</text><text x="-58" y="48" text-anchor="end">X- Y-</text><text x="-58" y="-45" text-anchor="end">X- Y+</text></svg></div>
+<div><div class="latest-entry"><label class="latest-reading"><span id="latestLabel">Start a session to enter readings here.</span><input id="latestReading" type="number" step="any" disabled placeholder="Dial value"></label><button id="saveReading" disabled>Save</button></div><div class="actions workflow-actions"><button id="cw" disabled>Move CW</button><button id="ccw" disabled>Move CCW</button><button id="hold" class="danger" disabled>Hold motion</button><button id="done" class="secondary" disabled>Done</button></div><p class="hint">Save each reading before the next move. Done finishes the move sequence and releases this pinned panel; saved readings remain available below.</p><p class="hint">Hold interrupts a move. Recover using gSender and start a new session at known geometry; there is no automatic resume.</p>
+<section class="manual-jog"><div class="jog-heading"><h3>Manual jog</h3><label class="jog-enable"><input id="enableJog" type="checkbox"><span>Enable jog controls</span></label></div><p class="hint">Disabled by default. Jogging ends the current measurement session. Confirm safe clearance before moving.</p><fieldset id="jogControls" disabled><div class="jog-options"><label>Jog step<select id="jogStep"><option value="0.1">0.1 mm</option><option value="0.5">0.5 mm</option><option value="1" selected>1 mm</option><option value="5">5 mm</option><option value="10">10 mm</option></select></label><label class="jog-safety"><input id="jogSafety" type="checkbox"><span>I checked safe Z and clear travel for this jog.</span></label></div><div class="jog-layout"><div class="jog-pad" aria-label="XY jog controls"><span></span><button type="button" data-jog-axis="y" data-jog-direction="1" disabled>Y+</button><span></span><button type="button" data-jog-axis="x" data-jog-direction="-1" disabled>X−</button><span class="pad-center">XY</span><button type="button" data-jog-axis="x" data-jog-direction="1" disabled>X+</button><span></span><button type="button" data-jog-axis="y" data-jog-direction="-1" disabled>Y−</button><span></span></div><div class="z-jog"><button type="button" data-jog-axis="z" data-jog-direction="1" disabled>Z+</button><button type="button" data-jog-axis="z" data-jog-direction="-1" disabled>Z−</button></div></div></fieldset><p id="jogStatus" class="jog-status" role="status">Jog is locked. Enable it to move an axis.</p></section>
+<p role="status" id="status">Set up your indicator and start a session.</p></div></section>
 <section class="panel"><h2>Dial readings</h2><p id="unitsNote" class="hint">Initial preload becomes reading 0. New moves add a row automatically.</p><div class="table-wrap"><table><thead><tr><th>Reading</th><th>Move</th><th>Spindle position</th><th>Dial value</th><th>Change from preload</th><th>Status</th></tr></thead><tbody id="readings"></tbody></table></div></section>
 <section class="panel"><h2>Understanding tilt and nod</h2><figure class="tilt-nod-figure"><img src="${tiltNodImage}" alt="Front view: tilt is spindle alignment across X. Side view: nod is spindle alignment across Y."><figcaption><strong>Tilt</strong> is the X-axis comparison (X+ to X-). <strong>Nod</strong> is the Y-axis comparison (Y+ to Y-).</figcaption></figure><p class="hint">This diagram describes the axis terminology. The plugin still measures by revolving the Z-carriage around a fixed indicator contact point.</p></section>
 <section class="panel"><h2>Calculate tilt, nod, and correction</h2><div class="grid"><label>Effective X adjustment span (mm, optional)<input id="xSpan" type="number" min="0.001" step="any" placeholder="Leave blank for tram error only"></label><label>Effective Y adjustment span (mm, optional)<input id="ySpan" type="number" min="0.001" step="any" placeholder="Leave blank for tram error only"></label></div><p class="hint">X+ versus X- gives tilt. Y+ versus Y- gives nod. Three non-collinear samples fit the 3D plane; 45 degree moves add diagonal samples. Adjustment spans estimate equivalent height correction; actual screw direction depends on the mount and dial orientation.</p><button id="calculate" disabled>Calculate tilt / nod and correction</button><div id="result" aria-live="polite"></div></section>
-<section id="visual" class="panel" hidden><div class="visual-heading"><h2>3D tram error plane</h2><span id="gainLabel">250x display exaggeration</span></div><label>Visual exaggeration<input id="gain" type="range" min="1" max="1000" value="250" step="1"></label><svg id="plane" viewBox="-180 -165 360 330" role="img" aria-label="Exaggerated three dimensional dial error plane"></svg><p class="hint">Colored plane: best fit to the measured dial readings. Dots show recorded sample locations, including diagonal positions from 45 degree moves. Dashed plane: zero error. Exaggeration changes the picture only. This is a tram visualization, not a surface height map.</p></section>`;
+<section id="visual" class="panel" hidden><div class="visual-heading"><h2>3D tram error plane</h2><span id="gainLabel">250x display exaggeration</span></div><label>Visual exaggeration<input id="gain" type="range" min="1" max="1000" value="250" step="1"></label><svg id="plane" viewBox="-180 -165 360 330" role="img" aria-label="Exaggerated three dimensional dial error plane"></svg><p class="hint">Colored plane: best fit to the measured dial readings. Dots show recorded sample locations, including diagonal positions from 45 degree moves. Dashed plane: zero error. Exaggeration changes the picture only. This is a tram visualization, not a surface height map.</p></section>
+<dialog id="stopSessionDialog" class="stop-session-dialog"><h2>Stop the tramming session and enable jog?</h2><p>Manual jogging ends this tramming session; saved readings remain for review, but the sequence cannot continue. If a move is underway or position is uncertain, the plugin requests a hold and requires you to recover/check the machine in gSender before jogging.</p><div class="actions"><button id="cancelJogEnable" class="secondary">Keep session</button><button id="confirmJogEnable" class="danger">Stop session and enable jog</button></div></dialog>`;
 
-let result=null, lastArc=null, sessionDone=false;
+let result=null, lastArc=null, sessionDone=false, jogEnabled=false;
 const sideLabel=side=>({east:'X+',south:'Y-',west:'X-',north:'Y+',southeast:'X+ / Y-',southwest:'X- / Y-',northwest:'X- / Y+',northeast:'X+ / Y+'}[side]||side.toUpperCase());
 const finiteReading=value=>value!=='' && Number.isFinite(Number(value));
 const session=new TrammingSession({machine,redux,onChange:render});
@@ -80,9 +83,13 @@ function syncButtons(){
  $('latestLabel').textContent=last?`Reading ${last.id} at ${sideLabel(last.side)}`:'Start a session to enter readings here.';
  $('calculate').disabled=session.moving || !session.rows.some(r=>r.status==='Ready');
  $('hold').disabled=!session.moving || !session.active;
- $('begin').disabled=session.moving || session.active&&!sessionDone;
- $('config').disabled=session.active&&!sessionDone || session.moving;
- $('ready').disabled=session.moving || session.active&&!sessionDone;
+ $('begin').disabled=session.moving || session.jogging || session.active&&!sessionDone;
+ $('config').disabled=session.active&&!sessionDone || session.moving || session.jogging;
+ $('ready').disabled=session.moving || session.jogging || session.active&&!sessionDone;
+ $('enableJog').disabled=session.jogging;
+ $('jogControls').disabled=!jogEnabled || session.moving || session.jogging;
+ const jogReady=jogEnabled && $('jogSafety').checked && !session.moving && !session.jogging && !session.active;
+ document.querySelectorAll('[data-jog-axis]').forEach(button=>button.disabled=!jogReady);
  $('workflow').classList.toggle('pinned',session.active&&!sessionDone&&!session.fault);
 }
 function render(){
@@ -126,7 +133,7 @@ $('saveReading').onclick=()=>{
  $('status').textContent=`Saved reading ${row.id} at ${sideLabel(row.side)}. Choose the next move when ready.`;syncButtons();
 };
 $('done').onclick=()=>{
- sessionDone=true;render();$('status').textContent='Move sequence finished and panel released. Save any pending reading; saved readings remain available below.';
+ session.active=false;sessionDone=true;render();$('status').textContent='Move sequence finished and panel released. Save any pending reading; saved readings remain available below.';
 };
 $('readings').addEventListener('input',event=>{
  const row=session.rows[Number(event.target.dataset.row)];if(!row)return;
@@ -142,6 +149,7 @@ for(const id of persistedSettingIds){
 }
 $('begin').onclick=async()=>{
  await settingsReady;
+ disableJog('Jog automatically disabled for the new tramming session.');
  if(!$('ready').checked){$('status').textContent='Check the setup confirmation before starting.';return;}
  sessionDone=false;
  clearResult();lastArc=null;
@@ -159,6 +167,55 @@ async function move(clockwise){
 }
 $('cw').onclick=()=>move(true);$('ccw').onclick=()=>move(false);
 $('hold').onclick=async()=>{try{await session.hold();$('status').textContent='Hold requested. Position is uncertain. Recover in gSender and start a new session.';}catch(error){$('status').textContent=`Hold request failed: ${error.message}. Use the machine stop controls.`;}};
+function disableJog(message){
+ jogEnabled=false;$('enableJog').checked=false;$('jogSafety').checked=false;
+ if(message)$('jogStatus').textContent=message;
+ render();
+}
+function showStopSessionWarning(){
+ $('enableJog').checked=false;
+ if(typeof $('stopSessionDialog').showModal==='function')$('stopSessionDialog').showModal();
+ else if(window.confirm('Manual jogging ends the current tramming session. If motion is underway, it will be held and the machine position must be checked in gSender. Continue?'))void stopSessionAndEnableJog();
+ render();
+}
+async function stopSessionAndEnableJog(){
+ $('stopSessionDialog').close();
+ $('jogStatus').textContent='Stopping the tramming session…';
+ render();
+ try{
+  await session.stopForJog();
+  while(session.moving)await new Promise(resolve=>setTimeout(resolve,25));
+  sessionDone=true;
+  assertIdle(await redux.getState());
+  jogEnabled=true;$('enableJog').checked=true;$('jogSafety').checked=false;
+  $('jogStatus').textContent='Session stopped. Check clearance, confirm the safety box, then jog.';
+ }catch(error){
+  jogEnabled=false;$('enableJog').checked=false;
+  $('jogStatus').textContent=`Jog remains locked: ${error.message}`;
+  $('status').textContent='The tramming session has ended. Recover/check the machine in gSender before enabling jog.';
+ }
+ render();
+}
+$('enableJog').addEventListener('change',()=>{
+ if(!$('enableJog').checked){disableJog('Jog disabled.');return;}
+ if(session.active||session.moving||session.fault&&!sessionDone){showStopSessionWarning();return;}
+ jogEnabled=true;$('jogSafety').checked=false;
+ $('jogStatus').textContent='Jog enabled. Check clearance before jogging.';
+ render();
+});
+$('cancelJogEnable').onclick=()=>{$('stopSessionDialog').close();$('enableJog').checked=false;render();};
+$('confirmJogEnable').onclick=()=>void stopSessionAndEnableJog();
+$('jogSafety').addEventListener('change',render);
+document.querySelectorAll('[data-jog-axis]').forEach(button=>button.addEventListener('click',async()=>{
+ if(!jogEnabled||!$('jogSafety').checked)return;
+ const axis=button.dataset.jogAxis,distance=Number($('jogStep').value)*Number(button.dataset.jogDirection);
+ try{
+  $('jogStatus').textContent=`Checking machine and jogging ${axis.toUpperCase()}…`;
+  await session.jog(axis,distance);
+  $('jogStatus').textContent=`Jog complete: ${axis.toUpperCase()} ${distance>0?'+':''}${distance} mm. Verify position before continuing.`;
+ }catch(error){$('jogStatus').textContent=`Jog stopped: ${error.message}`;}
+ render();
+}));
 function addText(parent,tag,text,className){const node=document.createElement(tag);node.textContent=text;if(className)node.className=className;parent.append(node);return node;}
 $('calculate').onclick=()=>{
  clearResult();

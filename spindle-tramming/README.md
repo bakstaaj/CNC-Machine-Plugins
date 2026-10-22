@@ -1,10 +1,23 @@
 # Spindle Tramming for gSender Edge2
 
-**Plugin 0.4.4 | gSender 1.7.0-Edge-2 | SDK 0.2.2**
+**Plugin 0.4.5 | gSender 1.7.0-Edge-2 | SDK 0.2.2**
 
 An interactive tramming workspace: enter your setup, move the spindle clockwise or counterclockwise, record dial readings, calculate tilt and nod, and inspect a 3D error plane with adjustable visual exaggeration. The complete measurement process stays in the plugin window.
 
 The setup values save locally in gSender and return when you leave the plugin and open it again. Measurement readings and the physical safety confirmation are session-only and start fresh each time.
+
+The measurement panel also includes a separate manual jog pad for X, Y, and Z. It starts disabled, requires a fresh clearance confirmation, and automatically locks again when a new tramming session starts. Enabling it during a session asks before ending that session.
+
+## What changed in 0.4.5
+
+- Adds a manual X/Y/Z jog pad with a selectable jog step and a separate enable switch.
+- Jog controls start disabled and require an explicit safe-clearance confirmation.
+- Enabling jog during a tramming session asks for confirmation and ends the current session; starting a new session disables jog again.
+- Jog requests are limited to an idle, connected controller with spindle power reported off. The plugin checks the reported position after each jog and does not resume an interrupted measurement session.
+
+![Manual jog panel beside the tramming measurement controls](docs/images/04-interactive.png)
+
+*The manual jog panel starts disabled at the beginning of a new tramming session. The screenshot uses a simulated host; no CNC was moved.*
 
 ## What changed in 0.4.4
 
@@ -14,7 +27,7 @@ The setup values save locally in gSender and return when you leave the plugin an
 
 Version 0.4.3 labels spindle positions as X+/X-/Y+/Y- and names the measured axes tilt (X) and nod (Y). It also makes the physical spindle/VFD power-off check explicit and avoids sending a feed hold when only the post-move G90 acknowledgement times out.
 
-> **Validation status:** The v0.4.4 UI build completed. Automated tests were not run. The settings screenshot uses simulated gSender storage; no real machine moved. Live persistence in gSender and CNC behavior have not been validated yet.
+> **Validation status:** The v0.4.5 UI build completed. Automated tests were not run. The screenshots use simulated gSender state; no real machine moved. Live gSender behavior and CNC jogging have not been validated yet.
 
 ## What changed in 0.4.3
 
@@ -73,7 +86,7 @@ Version 0.4.3 labels spindle positions as X+/X-/Y+/Y- and names the measured axe
 
 ## Installation and permissions
 
-1. Download `gsender-spindle-tramming-0.4.4.zip` and extract it.
+1. Download `gsender-spindle-tramming-0.4.5.zip` and extract it.
 
 2. Locate the extracted folder containing `gsender-plugin.json` and `ui/index.html`.
 
@@ -210,6 +223,12 @@ When the new row becomes **Ready**, enter the absolute dial value in the pinned 
 Press **Done** when you have finished moving the spindle. This ends the move sequence and releases the pinned panel so you can scroll normally. Saved readings stay in the table for calculations; if a latest value is still unsaved, you can save it after pressing Done.
 
 Continue choosing CW or CCW for each subsequent measurement. There is no need to leave the plugin, load a file, press host Run, or respond to an M0 dialog. Move CW and Move CCW initiate actual motion when pressed.
+
+### Manual jog controls
+
+Manual jog is a separate mode from the measurement sequence and is disabled every time the plugin opens. Enable it, select a 0.1 to 10 mm step, and confirm that Z clearance and the selected axis travel are safe before using the X/Y/Z buttons. The plugin checks that gSender is connected, Idle, unlocked, not running a host job, and that the controller reports spindle-off M5. It sends one incremental move at a time, restores the previous units and motion modes, then checks the reported endpoint.
+
+Starting a new tramming session turns manual jog off. If you enable jog while a measurement session is active, a warning asks whether to end that session. Confirming stops the session; if an arc is underway, the plugin requests a hold and requires you to recover/check the machine in gSender before jogging is enabled. Existing readings remain available, but the interrupted session cannot continue.
 
 For a four-side check, use 90 degrees and make successive CW moves from X+:
 

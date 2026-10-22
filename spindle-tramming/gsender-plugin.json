@@ -1,7 +1,7 @@
 {
   "id": "community.spindle-tramming",
   "name": "Spindle Tramming",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Interactive X/Y tilt and nod measurements, dial readings, correction estimates, and a sampled 3D error plane.",
   "engine": "1.7.0-Edge-2",
   "permissions": ["storage"],
