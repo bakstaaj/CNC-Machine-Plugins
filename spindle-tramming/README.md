@@ -1,12 +1,32 @@
 # Spindle Tramming for gSender Edge2
 
-**Plugin 0.4.2 | gSender 1.7.0-Edge-2 | SDK 0.2.2**
+**Plugin 0.4.3 | gSender 1.7.0-Edge-2 | SDK 0.2.2**
 
-An interactive tramming workspace: enter your setup, move the spindle clockwise or counterclockwise, record dial readings, calculate alignment error, and inspect a 3D error plane with adjustable visual exaggeration. The complete measurement process stays in the plugin window.
+An interactive tramming workspace: enter your setup, move the spindle clockwise or counterclockwise, record dial readings, calculate tilt and nod, and inspect a 3D error plane with adjustable visual exaggeration. The complete measurement process stays in the plugin window.
 
-Version 0.4.2 supports **90 degree moves (default)** and **45 degree moves**. Diagonal samples from 45 degree moves appear in the circular indicator and are included in the best-fit 3D error plane. The move panel stays pinned while you scroll, with a latest-reading field, **Save**, and **Done** controls.
+Version 0.4.3 labels spindle positions as X+/X-/Y+/Y- and names the measured axes tilt (X) and nod (Y). It also makes the physical spindle/VFD power-off check explicit and avoids sending a feed hold when only the post-move G90 acknowledgement times out.
 
-> **Validation status:** The 0.4.2 production build succeeds. Automated tests were not run for this update. Screenshots show the built UI connected to a local simulated host; no real machine moved. Live CNC behavior has not been validated.
+> **Validation status:** Build output and package contents are checked for this update. Automated tests were not run. Screenshots show the built UI connected to a local simulated host; no real machine moved. Live CNC behavior has not been validated.
+
+## What changed in 0.4.3
+
+- Cardinal and diagonal positions use machine-axis notation (X+, X-, Y+, Y-) instead of compass directions.
+- Results identify the X comparison as **tilt** and the Y comparison as **nod**, with the user-provided diagram shown in the plugin and this README.
+- The start confirmation explicitly requires spindle/VFD power to be switched off at its power control. The controller's M5 modal report remains a separate software check.
+- If `G90` is not acknowledged after the completion dwell, the plugin reports that absolute mode needs checking and does not send a redundant feed hold after the arc has finished.
+- Setup guidance calls out full-arc gauge clearance and suggests a camera or mirror to read the dial without leaning on the machine table.
+
+![Tilt across X and nod across Y](docs/images/tilt-nod.png)
+
+*Tilt is the X-axis comparison (X+ to X-); nod is the Y-axis comparison (Y+ to Y-).*
+
+![Updated interactive setup and measurement controls](docs/images/04-interactive.png)
+
+*Current plugin interface with axis-based positions and updated safety/setup guidance. Captured in a local simulated host; no machine was moved.*
+
+![Tilt and nod explanation in the plugin](docs/images/08-tilt-nod-ui.png)
+
+*The plugin explains tilt and nod beside the measurement workflow.*
 
 ## What changed in 0.4.2
 
@@ -27,7 +47,7 @@ Version 0.4.2 supports **90 degree moves (default)** and **45 degree moves**. Di
 
 - Initial preload is recorded as reading 0.
 
-- **Calculate error / recommended correction** reports X/Y differences, angular error, and optional correction estimates.
+- The results report tilt across X, nod across Y, angular error, and optional correction estimates.
 
 - A 3D plane visualizes combined tram error, with a **1x to 1000x exaggeration slider**.
 
@@ -41,7 +61,7 @@ Version 0.4.2 supports **90 degree moves (default)** and **45 degree moves**. Di
 
 ## Installation and permissions
 
-1. Download `gsender-spindle-tramming-0.4.2.zip` and extract it.
+1. Download `gsender-spindle-tramming-0.4.3.zip` and extract it.
 
 2. Locate the extracted folder containing `gsender-plugin.json` and `ui/index.html`.
 
@@ -62,7 +82,9 @@ The package contains:
   docs/  
     images/  
       Explanation.png  
+      tilt-nod.png
       04-interactive.png  
+      08-tilt-nod-ui.png
       05-readings.png  
       06-error-plane.png  
       07-corrections.png  
@@ -102,21 +124,21 @@ This plugin follows the fixed-contact approach of [bhowiebkr/spindle-tramming-to
 
 **The selected side describes the Z-carriage's position around the contact point, not the direction the indicator arm points.** The arm points toward the center.
 
-| Selected Z-carriage side | Z-carriage relative XY at 50 mm radius | Arm points |
+| Displayed position | Z-carriage relative XY at 50 mm radius | Arm points |
 | - | - | - |
-| East | X +50 mm, Y 0 | West |
-| Southeast | X +35.36 mm, Y -35.36 mm | Northwest |
-| South | X 0, Y -50 mm | North |
-| Southwest | X -35.36 mm, Y -35.36 mm | Northeast |
-| West | X -50 mm, Y 0 | East |
-| Northwest | X -35.36 mm, Y +35.36 mm | Southeast |
-| North | X 0, Y +50 mm | South |
-| Northeast | X +35.36 mm, Y +35.36 mm | Southwest |
+| X+ | X +50 mm, Y 0 | X- |
+| X+ / Y- | X +35.36 mm, Y -35.36 mm | X- / Y+ |
+| Y- | X 0, Y -50 mm | Y+ |
+| X- / Y- | X -35.36 mm, Y -35.36 mm | X+ / Y+ |
+| X- | X -50 mm, Y 0 | X+ |
+| X- / Y+ | X -35.36 mm, Y +35.36 mm | X+ / Y- |
+| Y+ | X 0, Y +50 mm | Y- |
+| X+ / Y+ | X +35.36 mm, Y +35.36 mm | X- / Y- |
 
 
 The contact point need not be the work origin because every arc uses relative endpoints and incremental I/J centers. Correct physical radius and starting side are still essential: the plugin cannot see the indicator tip. No initial positioning or Z movement is generated.
 
-The indicator must remain securely mounted and appropriately preloaded. Manual tracking, arm flex, friction, and inconsistent contact can affect the readings. The indicator arm must be free to rotate safely around the spindle axis without spindle power.
+The indicator must remain securely mounted and appropriately preloaded. Manual tracking, arm flex, friction, and inconsistent contact can affect the readings. The indicator arm must be free to rotate safely around the spindle axis without spindle power. Check gauge-body and stem clearance through the entire arc; depending on the radius and Z-carriage, the gauge's top stem cap may need to be removed if its design allows it. A camera or mirror can help read the dial when it faces away; avoid leaning on the table, which can change the reading.
 
 ## Setup controls
 
@@ -124,7 +146,7 @@ The indicator must remain securely mounted and appropriately preloaded. Manual t
 | - | - |
 | **Indicator radius (mm)** | Horizontal distance from spindle axis to contact tip. Default 50. Software limit: greater than zero through 1000. Your available travel may be much smaller. |
 | **Feed (mm/min)** | Arc feed. Default 300. Software limit: greater than zero through 10000. Choose a conservative speed that lets you follow the arm manually. |
-| **Spindle position at start** | East, south, west, or north relative to the intended fixed contact point. |
+| **Starting spindle position** | X+, Y-, X-, or Y+ relative to the intended fixed contact point. |
 | **Angle per move** | 90 degrees (default) or 45 degrees. The same setting applies to both move buttons during the session. |
 | **Initial preload reading** | Absolute dial value at the starting side, in the selected dial units. This becomes table row 0. It is not a commanded Z movement or target preload force. |
 | **Dial reading units** | Millimeters or inches. Radius, feed, and correction spans remain metric. Calculations convert inch dial values into millimeters. |
@@ -132,7 +154,7 @@ The indicator must remain securely mounted and appropriately preloaded. Manual t
 
 Check the setup confirmation and press **Start new session (clears readings)**. This reads machine state and spindle modal state, records the initial row, and locks the setup fields. It does not move any axis. Starting a new session discards the previous reading table; copy values elsewhere first if needed.
 
-The controller must be connected, Idle, unlocked, not running/paused on a host job, and not occupied by another feeder/plugin operation. It must report spindle-off modal state **M5**. This software check does not replace disabling spindle power physically. A controller reporting absolute I/J centers G90.1 is rejected.
+The controller must be connected, Idle, unlocked, not running/paused on a host job, and not occupied by another feeder/plugin operation. It must report spindle-off modal state **M5**. Separately, switch off spindle/VFD power at its physical power control before installing or moving the indicator; M5 is only a controller state report and cannot verify that the motor is physically de-energized. A controller reporting absolute I/J centers G90.1 is rejected.
 
 ## Step-by-step operation
 
@@ -140,33 +162,33 @@ The controller must be connected, Idle, unlocked, not running/paused on a host j
 
 1. Finish or stop any existing host job; the host workflow must be idle.
 
-2. Disable spindle power and secure the indicator arm.
+2. Switch spindle/VFD power off at its power control and secure the indicator arm.
 
-3. Measure the horizontal radius and position the spindle on a known cardinal side of the intended contact point.
+3. Measure the horizontal radius and position the spindle on a known axis side (X+, X-, Y+, or Y-) of the intended contact point.
 
 4. Point the indicator arm toward the center and apply suitable preload at the measurement Z height.
 
-5. Check clearance for the full planned arc, including holder, arm, clamps, and machine travel.
+5. Check clearance for the full planned arc, including gauge body/stem, holder, arm, clamps, and machine travel. Some gauge stems may need the cap removed for carriage clearance, if the gauge design permits it.
 
-6. Enter radius, feed, spindle starting side, angle, initial dial reading, and dial units.
+6. Enter radius, feed, spindle starting position, angle, initial dial reading, and dial units.
 
 7. Check the setup confirmation and start a session. The move panel then stays pinned while you scroll through history and results. After each verified move, enter the dial value and press **Save** before continuing.
 
-On first use, perform a spindle-off dry run above the surface to verify direction, travel, endpoint checks, and the Hold control before making contact measurements.
+On first use, perform a spindle-off dry run above the surface to verify direction, travel, endpoint checks, and the Hold control before making contact measurements. Use a camera or mirror to read the dial when it faces away; avoid leaning on the machine table while taking a reading.
 
 ### 2. Move clockwise or counterclockwise
 
-Press **Move CW** or **Move CCW**. Clockwise is viewed from above, with north = +Y and east = +X.
+Press **Move CW** or **Move CCW**. Clockwise is viewed from above. The labels show the Z-carriage's axis position relative to the contact point; they do not describe the direction the indicator arm points.
 
-| From east | 90 degrees | 45 degrees |
+| From X+ | 90 degrees | 45 degrees |
 | - | - | - |
-| CW | South | Southeast |
-| CCW | North | Northeast |
+| CW | Y- | X+ / Y- |
+| CCW | Y+ | X+ / Y+ |
 
 
 The plugin validates the current machine position and work coordinates against the last verified position, checks spindle state, then adds a row marked **Moving** with the selected turn and destination side. Reading inputs and other motion controls are disabled during the move.
 
-The controller acknowledgement for an arc means it was accepted, not that it finished. The plugin therefore waits for a planner-synchronizing `G4 P0`, restores G90, and verifies the resulting machine/work XY endpoint and unchanged Z. The diagram changes side only after these checks succeed. Endpoint comparison tolerance is 0.02 mm per axis in both coordinate frames.
+The controller acknowledgement for an arc means it was accepted, not that it finished. The plugin therefore waits for a planner-synchronizing `G4 P0`, restores G90, and verifies the resulting machine/work XY endpoint and unchanged Z. The diagram changes position only after these checks succeed. Endpoint comparison tolerance is 0.02 mm per axis in both coordinate frames. If G90 is not acknowledged after the completion dwell, the arc is already finished: the plugin locks out more moves but does not issue a feed hold. Check the controller modal state in gSender and restore G90 before further movement or starting a job.
 
 ### 3. Enter the reading
 
@@ -176,27 +198,27 @@ Press **Done** when you have finished moving the spindle. This ends the move seq
 
 Continue choosing CW or CCW for each subsequent measurement. There is no need to leave the plugin, load a file, press host Run, or respond to an M0 dialog. Move CW and Move CCW initiate actual motion when pressed.
 
-For a four-side check, use 90 degrees and make successive CW moves from east:
+For a four-side check, use 90 degrees and make successive CW moves from X+:
 
 ```
-East (initial reading) → South → West → North → East
+X+ (initial reading) → Y- → X- → Y+ → X+
 ```
 
-The closing east reading provides a repeatability check. With 45 degrees selected, successive CW moves from east visit southeast, south, southwest, west, northwest, north, northeast, and east. These intermediate diagonal samples add useful coverage for the fitted plane and can reveal tracking variation between cardinal sides. For the named X and Y comparison values, collect the corresponding east/west and north/south readings.
+The closing X+ reading provides a repeatability check. With 45 degrees selected, successive CW moves from X+ visit X+ / Y-, Y-, X- / Y-, X-, X- / Y+, Y+, X+ / Y+, and X+. These intermediate diagonal samples add useful coverage for the fitted plane and can reveal tracking variation between axis sides. For tilt and nod, collect the corresponding X+/X- and Y+/Y- readings.
 
 ![Example reading table after four moves](docs/images/05-readings.png)
 
 *Figure 2: A simulated 45 degree full-circle session. Diagonal spindle positions receive their own reading rows.*
 
-### 4. Calculate error and correction
+### 4. Calculate tilt, nod, and correction
 
-Press **Calculate error / recommended correction** after recording the needed readings.
+Press **Calculate tilt / nod and correction** after recording the needed readings.
 
-- EAST/WEST gives X error.
+- X+/X- gives tilt across the X axis.
 
-- NORTH/SOUTH gives Y error.
+- Y+/Y- gives nod across the Y axis.
 
-- Opposite cardinal pairs give the named X and Y comparison values.
+- Opposite axis pairs give the tilt and nod values.
 
 - Three or more non-collinear positions are enough to calculate the combined tilt and show the 3D plane. All valid samples, including diagonal 45 degree readings and repeat visits, contribute to its least-squares fit.
 
@@ -212,7 +234,7 @@ The recommendation is to equalize each opposite pair. A pair-mean target is show
 
 ![Calculated error and correction estimates](docs/images/07-corrections.png)
 
-*Figure 3: Example results for 50 mm radius, an east/west difference of 0.06 mm, a north/south difference of 0.04 mm, and optional spans of 200/150 mm.*
+*Figure 3: Example results for 50 mm radius, an X+/X- difference of 0.06 mm, a Y+/Y- difference of 0.04 mm, and optional spans of 200/150 mm.*
 
 ### 5. View the exaggerated 3D plane
 
@@ -224,7 +246,7 @@ Once there are at least three non-collinear measured positions, a 3D isometric e
 
 - Orange markers show positive fitted deviation; blue markers show negative fitted deviation.
 
-- Cardinal labels show fitted deviation. Dark dots show the actual readings at every sampled position; hover a dot to see its side and reading.
+- X+/X-/Y+/Y- labels show fitted deviation. Dark dots show the actual readings at every sampled position; hover a dot to see its position and reading.
 
 - The **Visual exaggeration** slider ranges from **1x to 1000x**, default **250x**.
 
@@ -244,22 +266,22 @@ Do not jog, change work offsets, adjust Z, or reposition the indicator during a 
 
 **Hold motion** sends a realtime feed hold. It is not an emergency stop or an automatic resume mechanism. A hold invalidates the current session; pending rows are marked Failed when the operation unwinds, and the side is treated as uncertain. Use the host/machine controls for recovery, restore known geometry, and begin a new session.
 
-If a controller command fails or completion cannot be confirmed, the plugin does not advance the diagram to the requested side. If an arc may already have been sent, it requests feed hold and blocks further plugin moves. An in-flight controller query may take until its timeout to return. Never assume a timeout stopped the machine: use the machine's stop controls when needed.
+If a controller command fails or completion cannot be confirmed, the plugin does not advance the diagram to the requested position. If an arc may still be moving, it requests feed hold and blocks further plugin moves. Once `G4 P0` confirms the arc completed, a later G90 acknowledgement timeout does not trigger feed hold; the plugin locks out further moves and tells you to verify absolute mode. Never assume a motion timeout stopped the machine: use the machine's stop controls when needed.
 
 Keep the plugin open during a move. Closing the view attempts a best-effort hold, but browser lifecycle delivery is not guaranteed. After navigating away, resetting, disconnecting, or recovering a machine alarm, start a new session.
 
 ## Calculation details
 
-Readings are grouped by side and converted to millimeters. Let the mean side readings be E, W, N, and S, with indicator radius R:
+Readings are grouped by axis position and converted to millimeters. Let the mean readings be X+, X-, Y+, and Y-, with indicator radius R:
 
 ```
 Diameter D = 2 R  
-X difference = E - W  
-Y difference = N - S  
-X equivalent slope = (E - W) / D  
-Y equivalent slope = (N - S) / D  
-X angular error = atan(X slope)  
-Y angular error = atan(Y slope)  
+Tilt difference (X) = X+ - X-
+Nod difference (Y) = Y+ - Y-
+X equivalent slope = (X+ - X-) / D
+Y equivalent slope = (Y+ - Y-) / D
+Tilt angular error = atan(X slope)
+Nod angular error = atan(Y slope)
 Combined angular error = atan(sqrt(X slope^2 + Y slope^2))  
 Maximum opposite-side error = D sqrt(X slope^2 + Y slope^2)  
 Equivalent span correction = abs(axis difference) span / D
@@ -273,7 +295,7 @@ Preload is a common reading offset, so it cancels out of opposite-pair differenc
 
 ## Commands and controller behavior
 
-A typical 90-degree clockwise move starting east, with radius 50 mm and feed 300 mm/min, sends these acknowledged SDK queries sequentially:
+A typical 90-degree clockwise move starting at X+, with radius 50 mm and feed 300 mm/min, sends these acknowledged SDK queries sequentially:
 
 ```
 $G  
@@ -283,7 +305,7 @@ G4 P0
 G90
 ```
 
-`$G` reads modal state and must report M5. `G21` selects millimeters, `G17` the XY plane, `G91` relative endpoints, and `G94` feed/minute. G2 is clockwise; G3 is counterclockwise. Incremental I/J arc centers are assumed. `G4 P0` waits for queued motion to complete, then G90 restores absolute endpoint mode.
+`$G` reads modal state and must report M5. `G21` selects millimeters, `G17` the XY plane, `G91` relative endpoints, and `G94` feed/minute. G2 is clockwise; G3 is counterclockwise. Incremental I/J arc centers are assumed. `G4 P0` waits for queued motion to complete, then G90 restores absolute endpoint mode. If the G90 acknowledgement times out after the dwell has completed, the plugin marks the session uncertain but does not send a feed hold because the arc is no longer in progress.
 
 All controller-bound strings are checked for printable ASCII. There are no operator messages, Unicode characters, M0 stops, M2 program ends, spindle commands, initial positioning, or Z moves in this interactive path. Negative coordinate minus signs remain necessary and are preserved.
 
@@ -298,15 +320,16 @@ The plugin reads top-level Redux machine/work positions, which the Edge2 control
 | Permission errors after upgrading | Reimport and approve the new machine/query/Redux permissions. Old visualizer-only grants are insufficient. |
 | Begin asks for setup confirmation | Check the confirmation after verifying the actual physical setup. |
 | Machine must be Idle/unlocked | Resolve the host job or controller condition through normal gSender procedures. No automatic unlocking is performed. |
-| Spindle must report M5 | Confirm spindle power is off and set spindle-off state through the host. The plugin does not issue M5 itself. |
+| Spindle must report M5 | Confirm the controller reports M5. Separately switch off spindle/VFD power at its physical power control; the plugin cannot verify physical motor power. |
 | Move buttons disabled after arrival | Enter a finite latest reading and press Save. Zero is valid; blank is not. |
 | Reading row remains Moving | Wait for motion completion. If movement is unexpected, use Hold or the machine stop controls. |
 | Position/offset changed | Restore known geometry and begin a new session. |
+| G90 acknowledgement timeout after motion | Do not repeat the move. Check gSender's modal report and restore G90 before further motion or running a job. The plugin does not send feed hold after its completion dwell confirms the arc is finished. |
 | error:9 or another controller error | Preserve console history and inspect the actual controller state. The plugin locks out further moves; do not assume a text-format issue or automatically unlock/resume. |
-| Only one axis comparison calculated | Measure the other opposite cardinal pair. Diagonal samples contribute to the plane fit but do not replace named E/W and N/S comparisons. |
+| Only one axis comparison calculated | Measure the other opposite pair: X+/X- for tilt or Y+/Y- for nod. Diagonal samples contribute to the plane fit but do not replace either pair. |
 | 3D plane absent | Record at least three non-collinear positions, then press Calculate. |
 | Slider changes picture but not correction | Expected. Exaggeration is visual only. |
-| Values differ from expectations | Confirm dial units, measured radius, selected spindle side, contact tracking, and repeated-side spread. |
+| Values differ from expectations | Confirm dial units, measured radius, selected spindle position, contact tracking, and repeated-side spread. |
 | Settings/rows lost | Page-session state only. Copy values elsewhere before reload or a new session. |
 
 

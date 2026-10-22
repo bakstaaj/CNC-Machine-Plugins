@@ -67,7 +67,7 @@ export class TrammingSession {
     const token=++this.token;
     const checkCancelled=()=>{if(token!==this.token)throw Error('Move interrupted. Restore the starting geometry and begin a new session.');};
     this.moving=true;this.changed();
-    let row,submitted=false,busy=false;
+    let row,arcSubmitted=false,motionCompleted=false,busy=false;
     try {
       const before=assertIdle(await this.redux.getState());
       if(!samePosition(before,this.position))throw Error('Machine position or work offset changed. Begin a new session at the actual start.');
@@ -78,13 +78,21 @@ export class TrammingSession {
       row={id:this.rows.length,side:arc.end,turn:clockwise?'CW':'CCW',reading:'',status:'Moving',saved:false};
       this.rows.push(row);this.changed();
       await this.checkedQuery('G21 G17 G91 G94');checkCancelled();
-      submitted=true;
+      arcSubmitted=true;
       await this.checkedQuery(arc.command);checkCancelled();
       const length=this.config.radius*this.config.degrees*Math.PI/180;
       const timeout=Math.min(1800000,Math.max(15000,length/this.config.feed*60000*3+10000));
       // Firmware acknowledges the dwell only after the planned arc finishes.
       await this.checkedQuery('G4 P0',Math.ceil(timeout));checkCancelled();
-      await this.checkedQuery('G90');checkCancelled();
+      motionCompleted=true;
+      try {
+        // G90 is idempotent, but a missing acknowledgement must not cause a
+        // feed hold after the arc has already completed.
+        await this.checkedQuery('G90',15000);
+      } catch(error) {
+        throw Error(`Motion finished, but the controller did not acknowledge G90. The command may have executed. Check gSender's modal state and restore absolute mode before any further movement or job. ${error.message}`);
+      }
+      checkCancelled();
       const expected=structuredClone(before);
       for(const frame of ['machine','work']){expected[frame].x+=arc.ex-arc.x;expected[frame].y+=arc.ey-arc.y;}
       const deadline=this.now()+5000;
@@ -106,7 +114,10 @@ export class TrammingSession {
     } catch(error) {
       this.fault=true;this.active=false;
       if(row)row.status='Failed';
-      if(submitted)await this.machine.command('feedhold').catch(()=>{});
+      // Hold only when the arc may still be moving. Sending feedhold after
+      // G4 P0 completed turns a modal-restore acknowledgement timeout into an
+      // unnecessary host hold, even though the physical move has finished.
+      if(arcSubmitted && !motionCompleted)await this.machine.command('feedhold').catch(()=>{});
       throw error;
     } finally {
       if(busy)await this.machine.setBusy(false).catch(()=>{});
