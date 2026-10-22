@@ -6,12 +6,14 @@ An interactive tramming workspace: enter your setup, move the spindle clockwise 
 
 The setup values save locally in gSender and return when you leave the plugin and open it again. Measurement readings and the physical safety confirmation are session-only and start fresh each time.
 
-The measurement panel also includes a separate manual jog pad for X, Y, and Z. It starts disabled, requires a fresh clearance confirmation, and automatically locks again when a new tramming session starts. Enabling it during a session asks before ending that session.
+The measurement panel also includes a separate manual jog pad for X, Y, and Z. It starts disabled and automatically locks again when a new tramming session starts. Enabling it during a session asks before ending that session.
 
 ## What changed in 0.4.5
 
 - Adds a manual X/Y/Z jog pad with a selectable jog step and a separate enable switch.
-- Jog controls start disabled and require an explicit safe-clearance confirmation.
+- Removes the separate clearance checkbox; enabling jog immediately exposes the axis controls.
+- Jog controls still require the controller to be connected, idle, unlocked, not running a host job, and reporting spindle-off M5.
+- Updates the jog-panel screenshot to show the simplified controls.
 - Enabling jog during a tramming session asks for confirmation and ends the current session; starting a new session disables jog again.
 - Jog requests are limited to an idle, connected controller with spindle power reported off. The plugin checks the reported position after each jog and does not resume an interrupted measurement session.
 
@@ -226,7 +228,7 @@ Continue choosing CW or CCW for each subsequent measurement. There is no need to
 
 ### Manual jog controls
 
-Manual jog is a separate mode from the measurement sequence and is disabled every time the plugin opens. Enable it, select a 0.1 to 10 mm step, and confirm that Z clearance and the selected axis travel are safe before using the X/Y/Z buttons. The plugin checks that gSender is connected, Idle, unlocked, not running a host job, and that the controller reports spindle-off M5. It sends one incremental move at a time, restores the previous units and motion modes, then checks the reported endpoint.
+Manual jog is a separate mode from the measurement sequence and is disabled every time the plugin opens. Enable it and select a 0.1 to 10 mm step to expose the X/Y/Z controls. The plugin checks that gSender is connected, Idle, unlocked, not running a host job, and that the controller reports spindle-off M5. It sends one incremental move at a time, restores the previous units and motion modes, then checks the reported endpoint. The operator is responsible for checking clearance and travel before moving.
 
 Starting a new tramming session turns manual jog off. If you enable jog while a measurement session is active, a warning asks whether to end that session. Confirming stops the session; if an arc is underway, the plugin requests a hold and requires you to recover/check the machine in gSender before jogging is enabled. Existing readings remain available, but the interrupted session cannot continue.
 

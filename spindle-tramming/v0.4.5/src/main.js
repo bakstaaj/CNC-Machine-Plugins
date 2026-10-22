@@ -22,7 +22,7 @@ document.querySelector('#app').innerHTML=`
 <section id="workflow" class="panel movement workflow"><div><h2>Move and measure</h2><p id="position">No active session</p>
 <svg id="circle" viewBox="-95 -95 190 190" aria-label="Current spindle position around contact point"><circle cx="0" cy="0" r="60" class="orbit"/><path id="arc"/><line id="arm" x1="0" y1="0"/><circle cx="0" cy="0" r="3" class="center"/><circle id="marker" r="6"/><text x="-9" y="-78">Y+</text><text x="78" y="4">X+</text><text x="-9" y="86">Y-</text><text x="-91" y="4">X-</text><text x="58" y="-45" text-anchor="start">X+ Y+</text><text x="58" y="48" text-anchor="start">X+ Y-</text><text x="-58" y="48" text-anchor="end">X- Y-</text><text x="-58" y="-45" text-anchor="end">X- Y+</text></svg></div>
 <div><div class="latest-entry"><label class="latest-reading"><span id="latestLabel">Start a session to enter readings here.</span><input id="latestReading" type="number" step="any" disabled placeholder="Dial value"></label><button id="saveReading" disabled>Save</button></div><div class="actions workflow-actions"><button id="cw" disabled>Move CW</button><button id="ccw" disabled>Move CCW</button><button id="hold" class="danger" disabled>Hold motion</button><button id="done" class="secondary" disabled>Done</button></div><p class="hint">Save each reading before the next move. Done finishes the move sequence and releases this pinned panel; saved readings remain available below.</p><p class="hint">Hold interrupts a move. Recover using gSender and start a new session at known geometry; there is no automatic resume.</p>
-<section class="manual-jog"><div class="jog-heading"><h3>Manual jog</h3><label class="jog-enable"><input id="enableJog" type="checkbox"><span>Enable jog controls</span></label></div><p class="hint">Disabled by default. Jogging ends the current measurement session. Confirm safe clearance before moving.</p><fieldset id="jogControls" disabled><div class="jog-options"><label>Jog step<select id="jogStep"><option value="0.1">0.1 mm</option><option value="0.5">0.5 mm</option><option value="1" selected>1 mm</option><option value="5">5 mm</option><option value="10">10 mm</option></select></label><label class="jog-safety"><input id="jogSafety" type="checkbox"><span>I checked safe Z and clear travel for this jog.</span></label></div><div class="jog-layout"><div class="jog-pad" aria-label="XY jog controls"><span></span><button type="button" data-jog-axis="y" data-jog-direction="1" disabled>Y+</button><span></span><button type="button" data-jog-axis="x" data-jog-direction="-1" disabled>X−</button><span class="pad-center">XY</span><button type="button" data-jog-axis="x" data-jog-direction="1" disabled>X+</button><span></span><button type="button" data-jog-axis="y" data-jog-direction="-1" disabled>Y−</button><span></span></div><div class="z-jog"><button type="button" data-jog-axis="z" data-jog-direction="1" disabled>Z+</button><button type="button" data-jog-axis="z" data-jog-direction="-1" disabled>Z−</button></div></div></fieldset><p id="jogStatus" class="jog-status" role="status">Jog is locked. Enable it to move an axis.</p></section>
+<section class="manual-jog"><div class="jog-heading"><h3>Manual jog</h3><label class="jog-enable"><input id="enableJog" type="checkbox"><span>Enable jog controls</span></label></div><p class="hint">Disabled by default. Jogging ends the current measurement session.</p><fieldset id="jogControls" disabled><div class="jog-options"><label>Jog step<select id="jogStep"><option value="0.1">0.1 mm</option><option value="0.5">0.5 mm</option><option value="1" selected>1 mm</option><option value="5">5 mm</option><option value="10">10 mm</option></select></label></div><div class="jog-layout"><div class="jog-pad" aria-label="XY jog controls"><span></span><button type="button" data-jog-axis="y" data-jog-direction="1" disabled>Y+</button><span></span><button type="button" data-jog-axis="x" data-jog-direction="-1" disabled>X−</button><span class="pad-center">XY</span><button type="button" data-jog-axis="x" data-jog-direction="1" disabled>X+</button><span></span><button type="button" data-jog-axis="y" data-jog-direction="-1" disabled>Y−</button><span></span></div><div class="z-jog"><button type="button" data-jog-axis="z" data-jog-direction="1" disabled>Z+</button><button type="button" data-jog-axis="z" data-jog-direction="-1" disabled>Z−</button></div></div></fieldset><p id="jogStatus" class="jog-status" role="status">Jog is locked. Enable it to move an axis.</p></section>
 <p role="status" id="status">Set up your indicator and start a session.</p></div></section>
 <section class="panel"><h2>Dial readings</h2><p id="unitsNote" class="hint">Initial preload becomes reading 0. New moves add a row automatically.</p><div class="table-wrap"><table><thead><tr><th>Reading</th><th>Move</th><th>Spindle position</th><th>Dial value</th><th>Change from preload</th><th>Status</th></tr></thead><tbody id="readings"></tbody></table></div></section>
 <section class="panel"><h2>Understanding tilt and nod</h2><figure class="tilt-nod-figure"><img src="${tiltNodImage}" alt="Front view: tilt is spindle alignment across X. Side view: nod is spindle alignment across Y."><figcaption><strong>Tilt</strong> is the X-axis comparison (X+ to X-). <strong>Nod</strong> is the Y-axis comparison (Y+ to Y-).</figcaption></figure><p class="hint">This diagram describes the axis terminology. The plugin still measures by revolving the Z-carriage around a fixed indicator contact point.</p></section>
@@ -88,7 +88,7 @@ function syncButtons(){
  $('ready').disabled=session.moving || session.jogging || session.active&&!sessionDone;
  $('enableJog').disabled=session.jogging;
  $('jogControls').disabled=!jogEnabled || session.moving || session.jogging;
- const jogReady=jogEnabled && $('jogSafety').checked && !session.moving && !session.jogging && !session.active;
+ const jogReady=jogEnabled && !session.moving && !session.jogging && !session.active;
  document.querySelectorAll('[data-jog-axis]').forEach(button=>button.disabled=!jogReady);
  $('workflow').classList.toggle('pinned',session.active&&!sessionDone&&!session.fault);
 }
@@ -168,7 +168,7 @@ async function move(clockwise){
 $('cw').onclick=()=>move(true);$('ccw').onclick=()=>move(false);
 $('hold').onclick=async()=>{try{await session.hold();$('status').textContent='Hold requested. Position is uncertain. Recover in gSender and start a new session.';}catch(error){$('status').textContent=`Hold request failed: ${error.message}. Use the machine stop controls.`;}};
 function disableJog(message){
- jogEnabled=false;$('enableJog').checked=false;$('jogSafety').checked=false;
+ jogEnabled=false;$('enableJog').checked=false;
  if(message)$('jogStatus').textContent=message;
  render();
 }
@@ -187,8 +187,8 @@ async function stopSessionAndEnableJog(){
   while(session.moving)await new Promise(resolve=>setTimeout(resolve,25));
   sessionDone=true;
   assertIdle(await redux.getState());
-  jogEnabled=true;$('enableJog').checked=true;$('jogSafety').checked=false;
-  $('jogStatus').textContent='Session stopped. Check clearance, confirm the safety box, then jog.';
+  jogEnabled=true;$('enableJog').checked=true;
+  $('jogStatus').textContent='Session stopped. Jog is enabled.';
  }catch(error){
   jogEnabled=false;$('enableJog').checked=false;
   $('jogStatus').textContent=`Jog remains locked: ${error.message}`;
@@ -199,15 +199,14 @@ async function stopSessionAndEnableJog(){
 $('enableJog').addEventListener('change',()=>{
  if(!$('enableJog').checked){disableJog('Jog disabled.');return;}
  if(session.active||session.moving||session.fault&&!sessionDone){showStopSessionWarning();return;}
- jogEnabled=true;$('jogSafety').checked=false;
- $('jogStatus').textContent='Jog enabled. Check clearance before jogging.';
+ jogEnabled=true;
+ $('jogStatus').textContent='Jog enabled. Jog moves are sent only when the controller is idle and ready.';
  render();
 });
 $('cancelJogEnable').onclick=()=>{$('stopSessionDialog').close();$('enableJog').checked=false;render();};
 $('confirmJogEnable').onclick=()=>void stopSessionAndEnableJog();
-$('jogSafety').addEventListener('change',render);
 document.querySelectorAll('[data-jog-axis]').forEach(button=>button.addEventListener('click',async()=>{
- if(!jogEnabled||!$('jogSafety').checked)return;
+ if(!jogEnabled)return;
  const axis=button.dataset.jogAxis,distance=Number($('jogStep').value)*Number(button.dataset.jogDirection);
  try{
   $('jogStatus').textContent=`Checking machine and jogging ${axis.toUpperCase()}…`;
