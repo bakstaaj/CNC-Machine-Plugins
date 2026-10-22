@@ -20,7 +20,7 @@ Source repository for gSender plugins maintained by Bakstaaj. The two height map
 | [Surface Height Map](surface-height-map/v0.1.22/README.md) | <img src="surface-height-map/v0.1.22/docs/screenshots/01-map-setup.jpg" alt="Surface height map calibration setup" width="300"> |
 | [Surface Height Map (File First)](surface-height-map-file-first/v0.1.6/README.md) | <img src="surface-height-map-file-first/v0.1.6/docs/screenshots/01-map-setup.jpg" alt="File First contour-aware mapping setup" width="300"> |
 | [Camera Align & Print Registration](camera-align-print-registration/v0.2.0/README.md) | <img src="camera-align-print-registration/v0.2.0/screenshots/camera-popout-jog.png" alt="Floating camera and attached jog controls" width="300"> |
-| [CNC Camera Monitor](camera-monitor/v0.1.8/README.md) | <img src="camera-monitor/v0.1.8/screenshots/02-second-camera-setup.png" alt="CNC Camera Monitor with second-camera settings expanded" width="300"> |
+| [CNC Camera Monitor](camera-monitor/v0.1.8/README.md) | <img src="camera-monitor/v0.1.8/screenshots/04-carve-camera-view.png" alt="CNC Camera Monitor view over the gSender Carve visualizer" width="300"> |
 | [G-code Job Cost Estimator](job-cost-estimator/v0.1.0/README.md) | <img src="job-cost-estimator/v0.1.0/screenshots/01-estimate-summary.jpg" alt="Estimated runtime, cost, and time breakdown" width="300"> |
 | [Basic Shape CAM](basic-shape-cam/v0.1.3/README.md) | <img src="basic-shape-cam/v0.1.3/docs/screenshots/02-slot-preview.jpg" alt="Generated rounded slot profile preview" width="300"> |
 
